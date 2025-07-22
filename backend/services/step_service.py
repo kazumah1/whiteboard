@@ -4,48 +4,49 @@ from models.whiteboard_command import WhiteboardCommand
 from models.traversal_state import TraversalState
 from models.whiteboard_object import ExcalidrawElement
 from typing import Optional, List
+from models.lesson_plan import LessonPlan
 
 class StepService:
     """
-    Handles traversal and execution of steps (DLL) within a LessonNode.
+    Handles traversal and execution of steps (DLL) within a LessonNode using ID-based lookups.
     """
     
-    def next_step(self, current_step: StepDLLNode) -> Optional[StepDLLNode]:
-        """Move to the next step in the DLL, if available."""
-        return current_step.next
+    def next_step(self, lesson_plan: LessonPlan, current_step_id: str) -> Optional[StepDLLNode]:
+        current_step = lesson_plan.steps[current_step_id]
+        if current_step.next_id:
+            return lesson_plan.steps[current_step.next_id]
+        return None
 
-    def prev_step(self, current_step: StepDLLNode) -> Optional[StepDLLNode]:
-        """Move to the previous step in the DLL, if available."""
-        return current_step.prev
+    def prev_step(self, lesson_plan: LessonPlan, current_step_id: str) -> Optional[StepDLLNode]:
+        current_step = lesson_plan.steps[current_step_id]
+        if current_step.prev_id:
+            return lesson_plan.steps[current_step.prev_id]
+        return None
 
-    def reset_step(self, step: StepDLLNode) -> None:
-        """Reset the current command group index for all command groups in this step."""
-        for group in step.commands:
-            group.reset()
+    def reset_step(self, lesson_plan: LessonPlan, step_id: str) -> None:
+        step = lesson_plan.steps[step_id]
+        for group_id in step.command_group_ids:
+            group = lesson_plan.command_groups[group_id]
+            group.current_command_index = 0
 
-    def get_current_command_group(self, step: StepDLLNode) -> CommandGroup:
-        """Get the current command group for this step."""
-        return step.commands[step.current_command_group_index]
+    def get_current_command_group(self, lesson_plan: LessonPlan, step_id: str) -> CommandGroup:
+        step = lesson_plan.steps[step_id]
+        group_id = step.command_group_ids[step.current_command_group_index]
+        return lesson_plan.command_groups[group_id]
 
-    def execute_step(self, step: StepDLLNode, state: TraversalState) -> List[ExcalidrawElement]:
+    def execute_step(self, lesson_plan: LessonPlan, step_id: str, state: TraversalState) -> List[ExcalidrawElement]:
         """
         Execute all commands in all command groups for the given step.
         Returns a flat list of ExcalidrawElement objects to be rendered for this step.
         """
         try:
-            print(f"Executing step: {step.id}")
-            print(f"Step has {len(step.commands)} command groups")
-            
+            step = lesson_plan.steps[step_id]
             elements: List[ExcalidrawElement] = []
-            for i, group in enumerate(step.commands):
-                print(f"Processing command group {i}: {group.id}")
-                print(f"Group has {len(group.commands)} commands")
-                
-                for j, command in enumerate(group.commands):
-                    print(f"Processing command {j}: {command.element.id}")
-                    elements.append(command.element)
-            
-            print(f"Returning {len(elements)} elements")
+            for group_id in step.command_group_ids:
+                group = lesson_plan.command_groups[group_id]
+                for command_id in group.command_ids:
+                    command = lesson_plan.commands[command_id]
+                    elements.append(lesson_plan.elements[command.element_id])
             return elements
         except Exception as e:
             print(f"Error in execute_step: {e}")

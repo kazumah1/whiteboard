@@ -1,13 +1,18 @@
+from __future__ import annotations
 from pydantic import BaseModel
-from models.lesson_node import LessonNode
-from models.traversal_history import TraversalHistory
-from models.step_node import StepDLLNode
-from models.command_group import CommandGroup
 from typing import Dict
+from .lesson_node import LessonNode
+from .step_node import StepDLLNode
+from .command_group import CommandGroup
+from .whiteboard_command import WhiteboardCommand
+from .whiteboard_object import ExcalidrawElement
 
 class LessonPlan(BaseModel):
     id: str
     title: str
-    lesson_root: LessonNode
-    nodes: Dict[str, LessonNode]
-    traversal_history: TraversalHistory
+    nodes: Dict[str, "LessonNode"]
+    steps: Dict[str, "StepDLLNode"]
+    command_groups: Dict[str, "CommandGroup"]
+    commands: Dict[str, "WhiteboardCommand"]
+    elements: Dict[str, "ExcalidrawElement"]
+    # ...other fields as needed...

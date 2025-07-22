@@ -2,14 +2,13 @@ import dynamic from "next/dynamic";
 import Script from "next/script";
 import "../../common.scss";
 
-const ExcalidrawWithClientOnly = dynamic(
-  async () => (await import("../../excalidrawWrapper")).default,
-  {
-    ssr: false,
-  },
-);
-
 export default function LoadLessonPage() {
+  // Move dynamic import inside the component
+  const ExcalidrawWithClientOnly = dynamic(
+    () => import("../../excalidrawWrapper"),
+    { ssr: false }
+  );
+
   return (
     <>
       <a href="/">Back to Home</a>
@@ -17,7 +16,6 @@ export default function LoadLessonPage() {
       <Script id="load-env-variables" strategy="beforeInteractive">
         {`window["EXCALIDRAW_ASSET_PATH"] = window.origin;`}
       </Script>
-      {/* @ts-expect-error - https://github.com/vercel/next.js/issues/42292 */}
       <ExcalidrawWithClientOnly />
     </>
   );

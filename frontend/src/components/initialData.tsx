@@ -506,7 +506,7 @@ export default {
         ],
       },
       {
-        type: "draw",
+        type: "freedraw",
         fillStyle: "solid",
         strokeWidth: 1,
         strokeStyle: "solid",
@@ -530,7 +530,7 @@ export default {
         ],
       },
       {
-        type: "draw",
+        type: "freedraw",
         fillStyle: "solid",
         strokeWidth: 1,
         strokeStyle: "solid",
@@ -554,7 +554,7 @@ export default {
         ],
       },
       {
-        type: "draw",
+        type: "freedraw",
         fillStyle: "solid",
         strokeWidth: 1,
         strokeStyle: "solid",
@@ -579,7 +579,7 @@ export default {
         ],
       },
       {
-        type: "draw",
+        type: "freedraw",
         fillStyle: "solid",
         strokeWidth: 1,
         strokeStyle: "solid",
@@ -605,7 +605,7 @@ export default {
         ],
       },
       {
-        type: "draw",
+        type: "freedraw",
         fillStyle: "solid",
         strokeWidth: 1,
         strokeStyle: "solid",
@@ -629,7 +629,7 @@ export default {
         ],
       },
       {
-        type: "draw",
+        type: "freedraw",
         fillStyle: "solid",
         strokeWidth: 1,
         strokeStyle: "solid",
@@ -769,7 +769,7 @@ export default {
         strokeSharpness: "sharp",
       },
       {
-        type: "draw",
+        type: "freedraw",
         fillStyle: "solid",
         strokeWidth: 1,
         strokeStyle: "solid",

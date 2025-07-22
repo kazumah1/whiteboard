@@ -1,3 +1,4 @@
+'use client';
 import { nanoid } from "nanoid";
 import React, {
   useEffect,
@@ -72,6 +73,28 @@ export interface AppProps {
   excalidrawLib: typeof TExcalidraw;
 }
 
+// Utility to flatten Excalidraw elements from the current lesson node (root)
+function extractExcalidrawElementsFromNode(node: any): any[] {
+  const elements: any[] = [];
+  if (!node || !node.steps_DLL_root) return elements;
+  let step = node.steps_DLL_root;
+  while (step) {
+    if (step.commands) {
+      for (const group of step.commands) {
+        if (group.commands) {
+          for (const cmd of group.commands) {
+            if (cmd.element) {
+              elements.push(cmd.element);
+            }
+          }
+        }
+      }
+    }
+    step = step.next;
+  }
+  return elements;
+}
+
 export default function ExampleApp({
   appTitle,
   useCustom,
@@ -133,32 +156,56 @@ export default function ExampleApp({
   useHandleLibrary({ excalidrawAPI });
 
   useEffect(() => {
+    console.log("useEffect");
     if (!excalidrawAPI) {
       return;
     }
     const fetchData = async () => {
-      const res = await fetch("/images/rocket.jpeg");
-      const imageData = await res.blob();
+      // Fetch lesson data from backend
+      const res = await fetch("http://localhost:8000/lesson/pythagorean-theorem/current_node/elements");
+      console.log("got response");
+      const data = await res.json();
+      console.log("got lesson", data);
+
+      console.log("elements", data.elements);
+
+      // Optionally, fetch images as before
+      const imageRes = await fetch("/images/rocket.jpeg");
+      const imageData = await imageRes.blob();
       const reader = new FileReader();
       reader.readAsDataURL(imageData);
 
       reader.onload = function () {
-        const imagesArray: BinaryFileData[] = [
+        console.log("reader onload");
+        const imagesArray = [
           {
-            id: "rocket" as BinaryFileData["id"],
-            dataURL: reader.result as BinaryFileData["dataURL"],
-            mimeType: MIME_TYPES.jpg,
+            id: "rocket",
+            dataURL: reader.result,
+            mimeType: "image/jpeg",
             created: 1644915140367,
             lastRetrieved: 1644915140367,
           },
         ];
-
-        //@ts-ignore
+        console.log("reader onload");
         initialStatePromiseRef.current.promise.resolve({
-          ...initialData,
-          elements: convertToExcalidrawElements(initialData.elements),
+          elements: convertToExcalidrawElements(data.elements),
+          appState: data.appState,
+          scrollToContent: data.scrollToContent,
+          libraryItems: data.libraryItems.map((item: any) =>
+            Array.isArray(item)
+              ? convertToExcalidrawElements(item)
+              : convertToExcalidrawElements([item])
+          ),
         });
-        excalidrawAPI.addFiles(imagesArray);
+        excalidrawAPI.addFiles(imagesArray
+          .map(img => ({
+            ...img,
+            mimeType: MIME_TYPES.jpg,
+            id: "rocket" as BinaryFileData["id"],
+            dataURL: (typeof img.dataURL === "string" ? img.dataURL : "") as BinaryFileData["dataURL"],
+          }))
+          .filter(img => img.dataURL)
+        );
       };
     };
     fetchData();
@@ -180,12 +227,6 @@ export default function ExampleApp({
       {
         excalidrawAPI: (api: ExcalidrawImperativeAPI) => setExcalidrawAPI(api),
         initialData: initialStatePromiseRef.current.promise,
-        onChange: (
-          elements: NonDeletedExcalidrawElement[],
-          state: AppState,
-        ) => {
-          console.info("Elements :", elements, "State : ", state);
-        },
         onPointerUpdate: (payload: {
           pointer: { x: number; y: number };
           button: "down" | "up";

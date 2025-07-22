@@ -2,6 +2,7 @@ from models.narration_event import NarrationEvent
 from models.lesson_node import LessonNode
 from models.traversal_state import TraversalState
 from models.step_node import StepDLLNode
+from models.lesson_plan import LessonPlan
 from typing import List
 from services.script_generator_service import ScriptGeneratorService
 
@@ -12,40 +13,41 @@ from services.script_generator_service import ScriptGeneratorService
 # TODO: add RAG operations
 
 class NarrationService:
-    def __init__(self, script_generator: ScriptGeneratorService):
+    def __init__(self, script_generator: ScriptGeneratorService, lesson_plan: LessonPlan):
         self.script_generator = script_generator
+        self.lesson_plan = lesson_plan
 
     async def generate_narration(
         self,
-        step: StepDLLNode,
+        step_id: str,
         context: TraversalState
     ) -> str:
         # Get visual elements from commands
-        visual_elements = self._get_visual_elements(step)
-        
+        visual_elements = self._get_visual_elements(step_id)
         # Get previous context from traversal history
         previous_context = self._get_previous_context(context)
-        
         # Generate the narration script using the script generator
         narration = await self.script_generator.generate_narration_script(
             topic="Pythagorean Theorem",  # This could be dynamic based on the lesson
-            step_description=step.id,
+            step_description=step_id,
             previous_context=previous_context,
             visual_elements=visual_elements
         )
-        
-        # TODO: Convert narration to speech using TTS
         return narration
 
-    def _get_visual_elements(self, step: StepDLLNode) -> str:
-        """Extract visual elements from step commands"""
+    def _get_visual_elements(self, step_id: str) -> str:
+        """Extract visual elements from step commands using ID-based lookups"""
         elements = []
-        for command_group in step.commands:
-            for command in command_group.commands:
-                if command.shape == "text":
-                    elements.append(f"Text: {command.props['text']}")
-                elif command.shape in ["line", "arrow"]:
-                    elements.append(f"{command.shape.capitalize()}: {command.props.get('points', '')}")
+        step = self.lesson_plan.steps[step_id]
+        for group_id in step.command_group_ids:
+            group = self.lesson_plan.command_groups[group_id]
+            for command_id in group.command_ids:
+                command = self.lesson_plan.commands[command_id]
+                el = self.lesson_plan.elements[command.element_id]
+                if el.type == "text":
+                    elements.append(f"Text: {el.text}")
+                elif el.type in ["line", "arrow"]:
+                    elements.append(f"{el.type.capitalize()}: {getattr(el, 'points', '')}")
         return "\n".join(elements)
 
     def _get_previous_context(self, context: TraversalState) -> str:
@@ -62,7 +64,6 @@ class NarrationService:
     ) -> str:
         # Format the context from narration history
         context_str = self._format_narration_history(narration_history)
-        
         # Use the script generator to handle the clarification
         return await self.script_generator.handle_clarification(
             question=question,
