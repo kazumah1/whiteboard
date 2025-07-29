@@ -164,8 +164,7 @@ export default function ExampleApp({
     // TODO: don't hardcode lessonId
     const fetchData = async () => {
       // Fetch lesson data from backend
-      const currentNode = await fetch("http://localhost:8000/lesson/pythagorean-theorem");
-      const res = await fetch("http://localhost:8000/lesson/pythagorean-theorem/current_node/elements");
+      const res = await fetch("http://localhost:8000/step/pythagorean-theorem/current_step/elements");
       const data = await res.json();
       console.log('number of els', data.elements.length);
 
@@ -324,6 +323,18 @@ export default function ExampleApp({
         >
           Next Step
         </button>
+        <button
+          onClick={handlePreviousNode}
+          style={{ height: "2.5rem" }}
+        >
+          Previous Topic
+        </button>
+        <button
+          onClick={handleNextNode}
+          style={{ height: "2.5rem" }}
+        >
+          Next Topic
+        </button>
       </>
     );
   };
@@ -389,17 +400,42 @@ export default function ExampleApp({
 
   const handleNextStep = async () => {
     const fetchData = async () => {
-      const nextNode = await fetch('http://localhost:8000/lesson/pythagorean-theorem/next_node');
-      const nextNodeData = await nextNode.json();
-      console.log(nextNodeData.id);
-      const res = await fetch('http://localhost:8000/lesson/pythagorean-theorem/current_node/elements');
+      const res = await fetch('http://localhost:8000/step/pythagorean-theorem/next_step');
       const data = await res.json()
-      return {
-        elements: restoreElements(
-          convertToExcalidrawElements(data.elements),
-          null
-        )
-      };
+      console.log('step data', data)
+      if (data) {
+        return {
+          elements: restoreElements(
+            convertToExcalidrawElements(data.elements),
+            null
+          )
+        };
+      } else {
+        return {
+          elements: null
+        }
+      }
+    }
+    const sceneData = await fetchData();
+    excalidrawAPI?.updateScene(sceneData);
+  }
+  const handleNextNode = async () => {
+    const fetchData = async () => {
+      const res = await fetch('http://localhost:8000/lesson/pythagorean-theorem/next_node');
+      const data = await res.json()
+      console.log('step data', data)
+      if (data) {
+        return {
+          elements: restoreElements(
+            convertToExcalidrawElements(data.elements),
+            null
+          )
+        };
+      } else {
+        return {
+          elements: null
+        }
+      }
     }
     const sceneData = await fetchData();
     excalidrawAPI?.updateScene(sceneData);
@@ -412,12 +448,42 @@ export default function ExampleApp({
       console.log('prevnode', prevNodeData);
       const res = await fetch('http://localhost:8000/lesson/pythagorean-theorem/current_node/elements');
       const data = await res.json()
-      return {
-        elements: restoreElements(
-          convertToExcalidrawElements(data.elements),
-          null
-        )
-      };
+      if (data) {
+        return {
+          elements: restoreElements(
+            convertToExcalidrawElements(data.elements),
+            null
+          )
+        };
+      } else {
+        return {
+          elements: null
+        }
+      }
+    }
+    const sceneData = await fetchData();
+    excalidrawAPI?.updateScene(sceneData);
+  }
+
+  const handlePreviousNode = async () => {
+    const fetchData = async () => {
+      const prevNode = await fetch('http://localhost:8000/lesson/undo');
+      const prevNodeData = await prevNode.json();
+      console.log('prevnode', prevNodeData);
+      const res = await fetch('http://localhost:8000/lesson/pythagorean-theorem/current_node/elements');
+      const data = await res.json()
+      if (data) {
+        return {
+          elements: restoreElements(
+            convertToExcalidrawElements(data.elements),
+            null
+          )
+        };
+      } else {
+        return {
+          elements: null
+        }
+      }
     }
     const sceneData = await fetchData();
     excalidrawAPI?.updateScene(sceneData);

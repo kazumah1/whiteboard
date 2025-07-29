@@ -23,6 +23,7 @@ async def undo():
         return state
     return None
 
+# getting entire lesson plan - not really used except maybe for higher level planning (might deprecate)
 @router.get("/{lesson_id}")
 async def get_lesson(lesson_id: str):
     lesson = lesson_service.load_lesson(lesson_id)
@@ -36,6 +37,7 @@ async def get_lesson(lesson_id: str):
 
 @router.get("/{lesson_id}/current_node")
 async def get_current_node(lesson_id: str):
+    # load lesson if doesn't exist and for congruent lessons in database
     lesson = lesson_service.load_lesson(lesson_id)
     node = lesson_service.get_current_node()
     return node.model_dump()
@@ -63,7 +65,7 @@ async def get_current_node_elements(lesson_id: str):
 @router.get("/{lesson_id}/next_node")
 async def next_node(lesson_id: str):
     lesson = lesson_service.load_lesson(lesson_id)
-    node = lesson_service.get_next_node()
+    node = lesson_service.next_node()
     if node:
         traversal_service.set_current_state(TraversalState(
             current_step_id=lesson_service.current_step_id,
@@ -71,4 +73,4 @@ async def next_node(lesson_id: str):
             # TODO: narration_event_id
         ))
         return node.model_dump()
-    return {"error": "No next node"}
+    return None
