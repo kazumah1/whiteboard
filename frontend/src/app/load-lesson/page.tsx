@@ -12,7 +12,6 @@ export default function LoadLessonPage() {
   return (
     <>
       <a href="/">Back to Home</a>
-      <h1 className="page-title">Load Lesson</h1>
       <Script id="load-env-variables" strategy="beforeInteractive">
         {`window["EXCALIDRAW_ASSET_PATH"] = window.origin;`}
       </Script>

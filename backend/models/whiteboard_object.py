@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional, List, Literal
+# import ..styles.css
 
 # Excalidraw element types (update as Excalidraw adds more)
 ExcalidrawElementType = Literal[

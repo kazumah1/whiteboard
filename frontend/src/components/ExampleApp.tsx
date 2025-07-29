@@ -42,6 +42,7 @@ import "./ExampleApp.scss";
 
 import type { ResolvablePromise } from "./utils";
 
+
 type Comment = {
   x: number;
   y: number;
@@ -139,6 +140,7 @@ export default function ExampleApp({
     {},
   );
   const [comment, setComment] = useState<Comment | null>(null);
+  const [lessonId, setLessonId] = useState<string>('');
 
   const initialStatePromiseRef = useRef<{
     promise: ResolvablePromise<ExcalidrawInitialDataState | null>;
@@ -156,18 +158,16 @@ export default function ExampleApp({
   useHandleLibrary({ excalidrawAPI });
 
   useEffect(() => {
-    console.log("useEffect");
     if (!excalidrawAPI) {
       return;
     }
+    // TODO: don't hardcode lessonId
     const fetchData = async () => {
       // Fetch lesson data from backend
+      const currentNode = await fetch("http://localhost:8000/lesson/pythagorean-theorem");
       const res = await fetch("http://localhost:8000/lesson/pythagorean-theorem/current_node/elements");
-      console.log("got response");
       const data = await res.json();
-      console.log("got lesson", data);
-
-      console.log("elements", data.elements);
+      console.log('number of els', data.elements.length);
 
       // Optionally, fetch images as before
       const imageRes = await fetch("/images/rocket.jpeg");
@@ -176,7 +176,6 @@ export default function ExampleApp({
       reader.readAsDataURL(imageData);
 
       reader.onload = function () {
-        console.log("reader onload");
         const imagesArray = [
           {
             id: "rocket",
@@ -186,7 +185,6 @@ export default function ExampleApp({
             lastRetrieved: 1644915140367,
           },
         ];
-        console.log("reader onload");
         initialStatePromiseRef.current.promise.resolve({
           elements: convertToExcalidrawElements(data.elements),
           appState: data.appState,
@@ -315,10 +313,16 @@ export default function ExampleApp({
           />
         )}
         <button
-          onClick={() => alert("This is an empty top right UI")}
+          onClick={handlePreviousStep}
           style={{ height: "2.5rem" }}
         >
-          Click me
+          Previous Step
+        </button>
+        <button
+          onClick={handleNextStep}
+          style={{ height: "2.5rem" }}
+        >
+          Next Step
         </button>
       </>
     );
@@ -382,6 +386,42 @@ export default function ExampleApp({
     };
     excalidrawAPI?.updateScene(sceneData);
   };
+
+  const handleNextStep = async () => {
+    const fetchData = async () => {
+      const nextNode = await fetch('http://localhost:8000/lesson/pythagorean-theorem/next_node');
+      const nextNodeData = await nextNode.json();
+      console.log(nextNodeData.id);
+      const res = await fetch('http://localhost:8000/lesson/pythagorean-theorem/current_node/elements');
+      const data = await res.json()
+      return {
+        elements: restoreElements(
+          convertToExcalidrawElements(data.elements),
+          null
+        )
+      };
+    }
+    const sceneData = await fetchData();
+    excalidrawAPI?.updateScene(sceneData);
+  }
+
+  const handlePreviousStep = async () => {
+    const fetchData = async () => {
+      const prevNode = await fetch('http://localhost:8000/lesson/undo');
+      const prevNodeData = await prevNode.json();
+      console.log('prevnode', prevNodeData);
+      const res = await fetch('http://localhost:8000/lesson/pythagorean-theorem/current_node/elements');
+      const data = await res.json()
+      return {
+        elements: restoreElements(
+          convertToExcalidrawElements(data.elements),
+          null
+        )
+      };
+    }
+    const sceneData = await fetchData();
+    excalidrawAPI?.updateScene(sceneData);
+  }
 
   const onLinkOpen = useCallback(
     (
@@ -691,7 +731,13 @@ export default function ExampleApp({
     <div className="App" ref={appRef}>
       <h1>{appTitle}</h1>
       {/* TODO fix type */}
+      <div className="excalidraw-wrapper w-100vh min-h-screen max-h-screen">
+          {renderExcalidraw(children)}
+          {Object.keys(commentIcons || []).length > 0 && renderCommentIcons()}
+          {comment && renderComment()}
+        </div>
       <ExampleSidebar>
+        
         <div className="button-wrapper">
           <button onClick={loadSceneOrLibrary}>Load Scene or Library</button>
           <button className="update-scene" onClick={updateScene}>
@@ -838,11 +884,7 @@ export default function ExampleApp({
             <div>y: {pointerData?.pointer.y ?? 0}</div>
           </div>
         </div>
-        <div className="excalidraw-wrapper">
-          {renderExcalidraw(children)}
-          {Object.keys(commentIcons || []).length > 0 && renderCommentIcons()}
-          {comment && renderComment()}
-        </div>
+        
 
         <div className="export-wrapper button-wrapper">
           <label className="export-wrapper__checkbox">

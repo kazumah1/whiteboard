@@ -1,248 +1,316 @@
----
-
-# 🧑‍💻 Whiteboard AI Tutor — Agent Plan & Progress
-
-## Quick Status Summary
-
-- **Models:** [x] Defined (minimal logic)
-- **Services:** [ ] Mostly stubs/pseudocode
-- **Prompts:** [x] Present
-- **Routes:** [ ] Minimal/incomplete
-- **Frontend:** [ ] Not started
-
----
-
-## Service Responsibility Map
-
-> **Purpose:** This map defines the clear boundaries and responsibilities for each backend service. Use it to avoid logic bleed and keep the codebase maintainable and testable.
-
-### **LessonService**
-**Responsibilities:**
-- Load, save, and manage lesson structures (DAG of LessonNodes)
-- Handle high-level lesson traversal (moving between concepts/branches)
-- Provide access to the current lesson node and its DLL
-- Expose lesson-level operations to the API layer
-
-**Should NOT:**
-- Handle step-by-step traversal within a concept (leave to StepService)
-- Generate narration or context (leave to NarrationService/ContextService)
-
-**Interacts with:** StepService, TraversalService
-
----
-
-### **StepService**
-**Responsibilities:**
-- Traverse DLL of steps within a LessonNode (next/prev step, jump, etc.)
-- Execute, undo, or redo step actions (whiteboard commands)
-- Manage current step pointer within a concept
-
-**Should NOT:**
-- Handle lesson-level traversal (leave to LessonService)
-- Generate narration or context
-
-**Interacts with:** LessonService, TraversalService
-
----
-
-### **TraversalService**
-**Responsibilities:**
-- Track and update the user's traversal state (current node/step)
-- Maintain traversal history for undo/redo
-- Provide state snapshots for context/narration
-
-**Should NOT:**
-- Directly manipulate lesson or step data (should work with models/services)
-- Generate narration or context
-
-**Interacts with:** LessonService, StepService, ContextService
-
----
-
-### **NarrationService**
-**Responsibilities:**
-- Generate narration for a given step (using ScriptGeneratorService)
-- Handle clarification requests (using context and LLM)
-- Format and log narration events
-
-**Should NOT:**
-- Traverse lessons or steps
-- Assemble context (leave to ContextService)
-- Call LLM directly (use ScriptGeneratorService)
-
-**Interacts with:** ContextService, ScriptGeneratorService
-
----
-
-### **ContextService**
-**Responsibilities:**
-- Gather all relevant context for narration/clarification (previous steps, board state, etc.)
-- Format context for prompt filling
-
-**Should NOT:**
-- Generate narration or clarification (leave to NarrationService)
-- Traverse lessons/steps (should use TraversalService)
-
-**Interacts with:** TraversalService, RAGService
-
----
-
-### **ScriptGeneratorService**
-**Responsibilities:**
-- Fill prompt templates and call the LLM API
-- Return generated text for narration or clarification
-
-**Should NOT:**
-- Assemble context (leave to ContextService)
-- Traverse lessons/steps
-
-**Interacts with:** PromptService, RAGService
-
----
-
-### **PromptService**
-**Responsibilities:**
-- Load and provide prompt templates
-- Fill templates with provided variables
-
-**Should NOT:**
-- Call LLM API
-- Assemble context
-
-**Interacts with:** ScriptGeneratorService
-
----
-
-### **RAGService**
-**Responsibilities:**
-- Retrieve relevant context chunks for RAG-based clarifications
-
-**Should NOT:**
-- Generate narration or clarification
-- Traverse lessons/steps
-
-**Interacts with:** ContextService, ScriptGeneratorService
-
----
-
-> **Tip:** If you find yourself writing code in a service that doesn't fit its responsibilities above, refactor it to the correct service or create a new one if needed.
-
----
-
-## 1. Project Overview
-
-This project is an AI-powered whiteboard tutor. The backend is built with FastAPI and Pydantic models, designed to serve lessons as a DAG (Directed Acyclic Graph) of concepts, each with a DLL (Doubly Linked List) of whiteboard steps and narration events. The frontend (to be built) will render these lessons, allow stepwise playback, and support narration and clarifications via LLM.
-
----
-
-## 2. Current State (as of latest code review)
-
-- **Models:** [x] Pydantic models for lessons, steps, commands, narration, etc. are defined. They are mostly data containers with minimal logic.
-- **Services:** [ ] Service classes exist for narration, script generation, lesson management, context, etc. Most methods are stubs or pseudocode with TODOs.
-- **Prompts:** [x] Prompt templates for narration and clarification are present.
-- **Routes:** [ ] Backend routes are minimal or not fully implemented.
-- **Frontend:** [ ] Not started.
-
----
-
-## 3. MVP Plan vs. Current State
-
-| Component                               | Status (Now) | Needs Work? |
-| --------------------------------------- | ------------ | ----------- |
-| Structured DAG + DLL lesson engine      | [x] Defined, [ ] Logic | Yes         |
-| Command-based whiteboard renderer       | [ ]          | Yes         |
-| Step-by-step drawing + narration sync   | [ ]          | Yes         |
-| GPT-based narration generation          | [ ] Pseudocode| Yes         |
-| Traversal tracking + narration log      | [ ] Pseudocode| Yes         |
-| Clarification Q&A                       | [ ] Pseudocode| Yes         |
-| Basic UI and hosting                    | [ ]          | Yes         |
-
----
-
-## 4. Backend Task Breakdown
-
-### **A. Core Logic & Data**
-- [x] Define Pydantic models for lessons, steps, commands, narration, etc.
-- [ ] Implement full traversal logic for lessons (DAG/DLL navigation, step execution, undo/redo, branching).
-- [ ] Implement persistent lesson loading (from file or DB, not just hardcoded in service).
-- [ ] Complete all TODOs in services:
-    - [ ] Context assembly (gather all info for LLM prompts)
-    - [ ] Board state and previous context extraction
-    - [ ] RAG (retrieve relevant context for clarifications)
-    - [ ] Narration and clarification generation (LLM API calls, prompt filling)
-    - [ ] Traversal history and narration log persistence
-- [ ] Implement and test all FastAPI endpoints:
-    - [ ] `GET /lesson/{id}`: Return full lesson structure (DAG, DLL, commands)
-    - [ ] `POST /narrate`: Accept step range, return narration
-    - [ ] `POST /clarify`: Accept traversal state + question, return clarification
-- [ ] Create a full test lesson (3+ steps, with narration and commands)
-- [ ] Ensure endpoints return correct, complete data for frontend
-
-### **B. Testing & Polish**
-- [ ] Add unit/integration tests for lesson traversal, narration, and clarification
-- [ ] Add error handling and validation
-- [ ] Prepare for deployment (env vars, config, etc.)
-
----
-
-## 5. Frontend Task Breakdown
-
-### **A. Setup & Core Components**
-- [ ] Scaffold frontend project (React/Next.js or Vite + React + Tailwind)
-- [ ] Integrate `react-konva` (or similar) for canvas rendering
-- [ ] Build Whiteboard component (renders commands step-by-step)
-- [ ] Build PlaybackController component (tracks DLL step pointer, Next/Back buttons)
-- [ ] Fetch and parse `/lesson/{id}` from backend
-- [ ] Animate draw commands (timed delays, fade-ins)
-
-### **B. Narration & Clarification**
-- [ ] Add NarrationBox component (displays or plays narration)
-- [ ] Add narration playback controller (fetch from `POST /narrate`)
-- [ ] Link narration triggers from DLL steps (e.g., `narrate: true`)
-- [ ] Sync narration and drawing step timing (simple fixed delays or manual sync map)
-- [ ] Build clarification UI (textbox + “Ask” button)
-- [ ] Display new narration + optional visual pointer overlay
-- [ ] Track TraversalHistory locally in frontend
-
-### **C. Polish & Optional**
-- [ ] Export full narration log (txt or chat-like)
-- [ ] Build Transcript component to view all utterances
-- [ ] Debug backtracking behavior (ensure consistent undo/redo visuals)
-- [ ] Pre-generate narration to speed up first-run experience
-- [ ] Deploy backend (Render/Fly.io) and frontend (Vercel)
-- [ ] User test: walk through lesson with real users
-
----
-
-## 6. Prioritized Action Plan
-
-### **Backend First Steps**
-1. **Implement lesson traversal and state management logic** (DAG/DLL, undo/redo, branching)
-2. **Finish narration and clarification generation** (LLM API, prompt filling, context assembly)
-3. **Wire up all FastAPI endpoints** for lesson, narration, and clarification
-4. **Make lesson loading dynamic** (from file or DB)
-5. **Test with a full lesson** (3+ steps, narration, commands)
-
-### **Frontend First Steps**
-1. **Scaffold frontend project** (React/Next.js or Vite)
-2. **Build whiteboard renderer and playback controls**
-3. **Connect to backend endpoints** and render lesson data
-4. **Implement narration and clarification UI**
-5. **Test end-to-end flow** (drawing, narration, clarification)
-
----
-
-## 7. Next Steps (Immediate TODOs)
-
-- [ ] Backend: Complete traversal, narration, and clarification logic
-- [ ] Backend: Implement and test all endpoints
-- [ ] Frontend: Scaffold project and build whiteboard/playback UI
-- [ ] Frontend: Connect to backend and test lesson flow
-
----
-
-## 8. Notes
-- The current codebase is a solid skeleton, but most core logic and all frontend work remain to be implemented.
-- Use this agent.md as a living document—update as you make progress or encounter new issues.
-
---- 
+# AI Code Assistant Guide (agents.md)
+
+This document provides comprehensive guidelines for AI-assisted development to ensure high-quality, maintainable, and scalable code output.
+
+## Core Principles
+
+### 1. Code Quality First
+- **Readability**: Code should be self-documenting and easy to understand
+- **Consistency**: Follow established patterns and conventions throughout the project
+- **Simplicity**: Prefer simple, clear solutions over complex ones
+- **Maintainability**: Write code that can be easily modified and extended
+
+### 2. Iterative Development
+- Start with working, simple implementations
+- Refactor incrementally for better design
+- Test each iteration thoroughly
+- Document decisions and trade-offs
+
+## Code Style Guidelines
+
+### General Style Rules
+1. **Naming Conventions**
+   - Use descriptive, meaningful names for variables, functions, and classes
+   - Follow language-specific conventions (camelCase, snake_case, PascalCase)
+   - Avoid abbreviations and single-letter variables (except loop counters)
+   - Use verbs for functions, nouns for variables/classes
+
+2. **Function Design**
+   - Keep functions small and focused (single responsibility)
+   - Limit parameters (max 3-4, use objects/structs for more)
+   - Return early when possible to reduce nesting
+   - Use pure functions when feasible
+
+3. **Error Handling**
+   - Handle errors explicitly, don't ignore them
+   - Use appropriate error types for the language
+   - Provide meaningful error messages
+   - Fail fast and fail clearly
+
+### Language-Specific Guidelines
+
+#### JavaScript/TypeScript
+```javascript
+// Good: Descriptive naming and clear structure
+const calculateTotalPrice = (items, taxRate) => {
+  if (!items || items.length === 0) {
+    return 0;
+  }
+  
+  const subtotal = items.reduce((sum, item) => sum + item.price, 0);
+  return subtotal * (1 + taxRate);
+};
+
+// Use TypeScript for better type safety
+interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+}
+```
+
+#### Python
+```python
+# Good: Clear function with type hints
+def process_user_data(
+    users: List[Dict[str, Any]], 
+    filter_active: bool = True
+) -> List[User]:
+    """Process user data and return filtered User objects."""
+    processed_users = []
+    
+    for user_data in users:
+        if filter_active and not user_data.get('is_active', False):
+            continue
+            
+        user = User.from_dict(user_data)
+        processed_users.append(user)
+    
+    return processed_users
+```
+
+## Testing Strategy
+
+### 1. Test-Driven Development (TDD)
+- Write tests before implementing features
+- Follow Red-Green-Refactor cycle
+- Start with simple test cases, then add edge cases
+
+### 2. Test Structure
+```javascript
+// Example test structure
+describe('UserService', () => {
+  describe('createUser', () => {
+    it('should create user with valid data', () => {
+      // Arrange
+      const userData = { name: 'John', email: 'john@example.com' };
+      
+      // Act
+      const result = userService.createUser(userData);
+      
+      // Assert
+      expect(result).toBeDefined();
+      expect(result.id).toBeTruthy();
+    });
+    
+    it('should throw error for invalid email', () => {
+      // Test edge cases and error conditions
+      const invalidData = { name: 'John', email: 'invalid-email' };
+      
+      expect(() => userService.createUser(invalidData))
+        .toThrow('Invalid email format');
+    });
+  });
+});
+```
+
+### 3. Test Coverage Goals
+- **Unit Tests**: Test individual functions/methods (aim for 80%+ coverage)
+- **Integration Tests**: Test component interactions
+- **End-to-End Tests**: Test complete user workflows
+- **Edge Cases**: Test boundary conditions and error scenarios
+
+## Code Review Guidelines
+
+### Self-Review Checklist
+Before submitting code, verify:
+
+1. **Functionality**
+   - [ ] Code works as intended
+   - [ ] Edge cases are handled
+   - [ ] Error conditions are managed properly
+
+2. **Quality**
+   - [ ] Code follows style guidelines
+   - [ ] Functions are small and focused
+   - [ ] Names are descriptive and consistent
+   - [ ] No commented-out code or debug statements
+
+3. **Performance**
+   - [ ] No obvious performance issues
+   - [ ] Efficient algorithms and data structures
+   - [ ] Proper resource management (memory, connections)
+
+4. **Security**
+   - [ ] Input validation is implemented
+   - [ ] No hardcoded secrets or sensitive data
+   - [ ] Proper authentication/authorization checks
+
+5. **Documentation**
+   - [ ] Complex logic is commented
+   - [ ] Public APIs are documented
+   - [ ] README is updated if needed
+
+## Iteration Techniques
+
+### 1. Incremental Development
+```
+Phase 1: Core functionality (minimal viable implementation)
+Phase 2: Add edge case handling
+Phase 3: Optimize performance
+Phase 4: Add advanced features
+Phase 5: Refactor for maintainability
+```
+
+### 2. Refactoring Approach
+- **Extract Methods**: Break down large functions
+- **Extract Constants**: Replace magic numbers/strings
+- **Eliminate Duplication**: Use DRY principle
+- **Improve Naming**: Make intent clearer
+- **Simplify Conditionals**: Reduce complexity
+
+### 3. Performance Optimization
+- Measure before optimizing
+- Focus on bottlenecks, not micro-optimizations
+- Consider algorithmic improvements first
+- Use profiling tools to identify issues
+
+## Best Practices by Domain
+
+### Frontend Development
+- **Component Design**: Small, reusable components
+- **State Management**: Minimize shared state, use proper state management patterns
+- **Accessibility**: Follow WCAG guidelines
+- **Performance**: Optimize bundle size, lazy loading
+
+### Backend Development
+- **API Design**: RESTful principles, consistent naming
+- **Database**: Proper indexing, query optimization
+- **Security**: Input validation, authentication, authorization
+- **Monitoring**: Logging, metrics, health checks
+
+### DevOps/Infrastructure
+- **Configuration**: Environment-specific configs
+- **Deployment**: Automated, repeatable processes
+- **Monitoring**: Comprehensive logging and alerting
+- **Scaling**: Design for horizontal scaling
+
+## Common Anti-Patterns to Avoid
+
+### Code Smells
+- **God Classes**: Classes that do too much
+- **Long Methods**: Functions over 20-30 lines
+- **Deep Nesting**: More than 3 levels of indentation
+- **Magic Numbers**: Unexplained constants
+- **Duplicate Code**: Copy-paste programming
+
+### Design Issues
+- **Tight Coupling**: Components too dependent on each other
+- **Circular Dependencies**: Modules importing each other
+- **Premature Optimization**: Optimizing before measuring
+- **Over-Engineering**: Adding unnecessary complexity
+
+## Documentation Standards
+
+### Code Comments
+```javascript
+/**
+ * Calculates the optimal route between two points
+ * @param {Point} start - Starting coordinates
+ * @param {Point} end - Destination coordinates
+ * @param {RouteOptions} options - Route calculation options
+ * @returns {Promise<Route>} Optimized route with waypoints
+ */
+async function calculateRoute(start, end, options = {}) {
+  // Implementation details...
+}
+```
+
+### README Structure
+```markdown
+# Project Name
+
+## Description
+Brief description of what the project does
+
+## Installation
+Step-by-step installation instructions
+
+## Usage
+Basic usage examples
+
+## API Documentation
+If applicable, API endpoints and usage
+
+## Contributing
+Guidelines for contributors
+
+## License
+License information
+```
+
+## Debugging and Troubleshooting
+
+### Debugging Strategy
+1. **Reproduce the Issue**: Create minimal test case
+2. **Isolate the Problem**: Use debugging tools, add logging
+3. **Form Hypotheses**: Based on symptoms and code analysis
+4. **Test Systematically**: Verify or disprove each hypothesis
+5. **Fix and Verify**: Implement fix and ensure it works
+
+### Logging Best Practices
+```javascript
+// Good logging with context
+logger.info('User authentication successful', {
+  userId: user.id,
+  sessionId: session.id,
+  timestamp: new Date().toISOString()
+});
+
+// Structured error logging
+logger.error('Database connection failed', {
+  error: error.message,
+  stack: error.stack,
+  connectionString: sanitizedConnectionString
+});
+```
+
+## Security Considerations
+
+### Input Validation
+- Validate all user inputs
+- Use whitelisting over blacklisting
+- Sanitize data before processing
+- Use parameterized queries for databases
+
+### Authentication & Authorization
+- Implement proper session management
+- Use secure password hashing
+- Implement rate limiting
+- Follow principle of least privilege
+
+## Performance Guidelines
+
+### Optimization Priorities
+1. **Algorithmic Efficiency**: Choose right algorithms and data structures
+2. **Database Optimization**: Proper indexing, query optimization
+3. **Caching Strategy**: Implement appropriate caching levels
+4. **Resource Management**: Proper cleanup, connection pooling
+
+### Monitoring Metrics
+- Response times
+- Error rates
+- Resource utilization
+- User experience metrics
+
+## Conclusion
+
+Following these guidelines will result in code that is:
+- **Readable**: Easy to understand and maintain
+- **Reliable**: Well-tested and robust
+- **Scalable**: Can handle growth and change
+- **Secure**: Protects against common vulnerabilities
+- **Performant**: Efficient and responsive
+
+Remember: The goal is not perfect code, but code that effectively solves problems while being maintainable and reliable. Always consider the trade-offs between different approaches and choose the solution that best fits the project's needs and constraints.
