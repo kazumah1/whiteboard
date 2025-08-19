@@ -5,7 +5,7 @@ from services.prompt_service import PromptService
 # from services.rag_service import RAGService
 from services.traversal_service import TraversalService
 from services.context_service import ContextService
-
+import os
 # handles all things LLM related
 ## Includes RAG operations
 ## retrieving prompt
@@ -14,7 +14,7 @@ from services.context_service import ContextService
 class ScriptGeneratorService:
     def __init__(self, prompt_service: PromptService, traversal_service: TraversalService, context_service: ContextService):
         self.prompt_service = prompt_service
-        self.api_key = "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"  # TODO: Move to env
+        self.api_key = os.getenv("OPENROUTER_API_KEY")  # TODO: Move to env
         self.model = "meta-llama/llama-4-scout:free"  # TODO: Make configurable
         # self.rag_service = rag_service
         self.traversal_service = traversal_service
